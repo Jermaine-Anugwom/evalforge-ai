@@ -15,7 +15,9 @@ Teams cannot safely improve an AI workflow when quality, abstention, latency, co
 
 ## The proof
 
-Golden cases, adversarial suites, weighted rubrics, regression gates, trace inspection, and reproducible reports.
+Term-based rubrics, required-abstention cases, forbidden-term checks, latency/cost records, and a fail-closed regression gate that requires matching unique case IDs.
+
+The committed fixture set contains 100 category-varied golden cases and 12 distinct adversarial scenarios; test IDs map directly to those records.
 
 ## Why this is forward deployed
 
@@ -43,14 +45,14 @@ flowchart LR
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[dev]'
+python -m pip install -c constraints.txt -e '.[dev]'
 pytest -q
 evalforge
 ```
 
 No API key or network connection is required.
 
-Run the complete local stack with `docker compose up --build`; the interface is available on port 3001 and the API on port 8001.
+Run the interface and API demonstrations side by side with `docker compose up --build`; the interface is available on port 3001 and the API on port 8001. The visual fixture is intentionally static and does not claim to be API-produced evidence.
 
 ## Evaluation and limitations
 

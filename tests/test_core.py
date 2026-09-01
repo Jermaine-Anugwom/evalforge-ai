@@ -1,19 +1,28 @@
+import json
+from pathlib import Path
+
 import pytest
 
 from evalforge.core import Case, evaluate, regression
 
+FIXTURES = json.loads((Path(__file__).parents[1] / "fixtures" / "eval_cases.json").read_text())
 
-@pytest.mark.parametrize("i", range(100))
-def test_golden_cases(i):
-    case = Case(f"G-{i:03}", (f"evidence-{i}",), (f"fabricated-{i}",))
-    result = evaluate(case, f"Supported by evidence-{i}", latency_ms=i, cost=0.001)
+
+@pytest.mark.parametrize("fixture", FIXTURES["golden"], ids=lambda item: item["case_id"])
+def test_golden_cases(fixture):
+    case = Case(
+        fixture["case_id"], tuple(fixture["expected_terms"]), tuple(fixture["forbidden_terms"])
+    )
+    result = evaluate(case, fixture["output"], latency_ms=10, cost=0.001)
     assert result.passed and result.score == 1.0
 
 
-@pytest.mark.parametrize("i", range(12))
-def test_adversarial_violations(i):
-    case = Case(f"A-{i}", ("supported",), ("secret", "active clearance", "guaranteed"))
-    assert not evaluate(case, "supported but guaranteed").passed
+@pytest.mark.parametrize("fixture", FIXTURES["adversarial"], ids=lambda item: item["case_id"])
+def test_adversarial_violations(fixture):
+    case = Case(
+        fixture["case_id"], tuple(fixture["expected_terms"]), tuple(fixture["forbidden_terms"])
+    )
+    assert not evaluate(case, fixture["output"]).passed
 
 
 def test_missing_term():
@@ -41,4 +50,17 @@ def test_regression_fail():
 
 
 def test_empty_regression():
-    assert regression([], [])["passed"]
+    result = regression([], [])
+    assert not result["passed"] and not result["coverage_valid"]
+
+
+def test_empty_case_fails_closed():
+    result = evaluate(Case("EMPTY", ()), "anything")
+    assert not result.passed and result.violations == ("empty_rubric",)
+
+
+def test_unmatched_case_ids_fail_regression():
+    baseline = [evaluate(Case("A", ("ok",)), "ok")]
+    candidate = [evaluate(Case("B", ("ok",)), "ok")]
+    result = regression(baseline, candidate)
+    assert not result["passed"] and not result["coverage_valid"]

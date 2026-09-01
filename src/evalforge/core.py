@@ -26,6 +26,8 @@ def evaluate(case: Case, output: str, latency_ms: int = 0, cost: float = 0.0) ->
     low = output.lower()
     missing = tuple(x for x in case.expected_terms if x.lower() not in low)
     violations = tuple(x for x in case.forbidden_terms if x.lower() in low)
+    if not case.expected_terms and not case.forbidden_terms and not case.require_abstention:
+        violations += ("empty_rubric",)
     abstained = "insufficient evidence" in low or "cannot determine" in low
     if case.require_abstention and not abstained:
         violations += ("required_abstention",)
@@ -50,11 +52,21 @@ def evaluate(case: Case, output: str, latency_ms: int = 0, cost: float = 0.0) ->
 def regression(
     baseline: list[Result], candidate: list[Result], tolerance: float = 0.02
 ) -> dict[str, float | bool]:
+    baseline_ids = [item.case_id for item in baseline]
+    candidate_ids = [item.case_id for item in candidate]
+    coverage_valid = (
+        bool(baseline)
+        and bool(candidate)
+        and len(set(baseline_ids)) == len(baseline_ids)
+        and len(set(candidate_ids)) == len(candidate_ids)
+        and set(baseline_ids) == set(candidate_ids)
+    )
     b = sum(x.score for x in baseline) / max(1, len(baseline))
     c = sum(x.score for x in candidate) / max(1, len(candidate))
     return {
         "baseline": round(b, 3),
         "candidate": round(c, 3),
         "delta": round(c - b, 3),
-        "passed": c + float(tolerance) >= b,
+        "passed": coverage_valid and c + float(tolerance) >= b,
+        "coverage_valid": coverage_valid,
     }

@@ -21,7 +21,7 @@ Teams cannot safely improve an AI workflow when quality, abstention, latency, co
 
 ## Success measure
 
-Golden cases, adversarial suites, weighted rubrics, regression gates, trace inspection, and reproducible reports.
+Committed golden/adversarial fixtures, term and abstention rubrics, matching-ID regression gates, and inspectable synthetic traces.
 
 ## Handoff
 
